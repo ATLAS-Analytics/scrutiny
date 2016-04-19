@@ -18,7 +18,7 @@ fi
 
 $SCRIPTS_PATH/produce.sh >$LOGS/produce.log 2>&1
 
-if [ $? -eq 0 ]; then
+if [ $? -ne 0 ]; then
     exit $?
 fi
 
