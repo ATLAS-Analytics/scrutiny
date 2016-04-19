@@ -9,6 +9,13 @@ export DATE=`date +%Y-%m-%d`
 export LOGS="$LOG_DIR/$(date +%F_%H%M)"
 mkdir -p $LOGS
 
+$SCRIPTS_PATH/check_dumps.sh > $LOGS/check_dumps.log 2>&1
+
+if [ $? -eq 1 ]; then
+    mail -s "Scrutiny: dumps check failed, could not find all necessary dumps" $MAIL_TO
+    exit $?
+fi
+
 $SCRIPTS_PATH/produce.sh >$LOGS/produce.log 2>&1
 
 if [ $? -eq 0 ]; then

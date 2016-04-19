@@ -16,6 +16,9 @@ export HDFS_TRACES_DIR="${HDFS_SCRUTINY_DIR}/traces-preprocess"
 export HDFS_ZEROACCESS_DIR="${HDFS_SCRUTINY_DIR}/zeroaccess"
 export HDFS_REPORT_DIR=$HDFS_ALL_REPORTS_DIR/$DATE
 
+export HDFS_RUCIO_DIR="/user/rucio01"
+export HDFS_RUCIO_DUMPS_DIR="${HDFS_RUCIO_DIR}/dumps"
+
 export POPULARITY_CSV_OUT_DIR=$HOME/www/scrutiny/$DATE/csv
 
 export ZEROACCESS_OUT_DIR=$HOME/www/zeroaccess/$DATE
