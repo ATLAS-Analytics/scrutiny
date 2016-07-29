@@ -1,8 +1,26 @@
-set job.name atlas-ddm-scrutiny-xaod-aod-vs-daod;
+SET job.name atlas-ddm-scrutiny-xaod-aod-vs-daod;
 
-register '$LIB_DIR/resolve_udfs.py' USING jython AS udfs;
 REGISTER /usr/lib/pig/lib/avro.jar;
-register /usr/lib/avro/avro-mapred.jar;
+REGISTER /usr/lib/avro/avro-mapred.jar;
+REGISTER '$LIB_DIR/resolve_udfs.py' USING jython AS udfs;
+
+/*
+This script takes the preprocessed file level traces and creates daily access statistics.
+
+The aggregation is by:
+ - day
+ - datatype (AOD,DAOD)
+ - type of access (grid, local).
+The computed metrics are:
+ - number of events
+ - number of bytes
+ - number of files accessed.
+
+The original trace carries no information about the datatype. It only has
+the path of the accessed file. From this path a UDF is used to get the actual filename. For
+official data the type is encoded in the filename so another UDF is used to resolve the datatype.
+The number of events in a file and the size is then added from the DID table dump.
+*/
 
 files = LOAD '$HDFS_XAOD_TRACES_DIR/{$MONTHS}' USING PigStorage() AS (
  timeentry: long,
@@ -14,9 +32,9 @@ files = LOAD '$HDFS_XAOD_TRACES_DIR/{$MONTHS}' USING PigStorage() AS (
 
 get_filename = FOREACH files GENERATE udfs.toDay(timeentry) as day, uuid, id, udfs.getFilename(path) as filename, udfs.getTraceType(id) as traceType;
 
-get_type = FOREACH get_filename GENERATE day, uuid, id, filename, traceType, udfs.getType(filename) as type, udfs.getDAODType(filename) as daodType;
+get_type = FOREACH get_filename GENERATE day, uuid, id, filename, traceType, udfs.getDatatype(filename) as type;
 
-dids = LOAD '$HDFS_RUCIO_DIR/dumps/2016-06-30/dids' USING AvroStorage();
+dids = LOAD '$HDFS_RUCIO_DIR/dumps/$DIDS_DATE/dids' USING AvroStorage();
 
 get_events = FOREACH dids GENERATE SCOPE as scope, NAME as name, (long)BYTES as bytes, (long)EVENTS as events, DID_TYPE as did_type;
 

@@ -1,9 +1,15 @@
-set job.name atlas-ddm-scrutiny-xaod-traces-to-files;
-register '$LIB_DIR/elephant-bird-core-4.9.jar';
-register '$LIB_DIR/elephant-bird-hadoop-compat-4.9.jar';
-register '$LIB_DIR/elephant-bird-pig-4.9.jar';
-register '$LIB_DIR/resolve_udfs.py' USING jython AS udfs;
-register '/usr/lib/pig/lib/json-simple-*.jar';
+SET job.name atlas-ddm-scrutiny-xaod-traces-to-files;
+REGISTER '/usr/lib/pig/lib/json-simple-*.jar';
+REGISTER '$LIB_DIR/elephant-bird-core-4.9.jar';
+REGISTER '$LIB_DIR/elephant-bird-hadoop-compat-4.9.jar';
+REGISTER '$LIB_DIR/elephant-bird-pig-4.9.jar';
+REGISTER '$LIB_DIR/resolve_udfs.py' USING jython AS udfs;
+
+/*
+This script is used to convert the nested XAOD JSON traces into a simple TSV format
+with one trace per file, which then can be used as input for the actual processing
+of AOD/DAOD accesses.
+*/
 
 traces = LOAD '$HDFS_RUCIO_DIR/nongrid_traces/{$MONTH}-*.json' using com.twitter.elephantbird.pig.load.JsonLoader('-nestedLoad') AS (json:map[]);
 

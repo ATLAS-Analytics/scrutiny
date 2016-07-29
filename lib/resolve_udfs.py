@@ -8,7 +8,7 @@ def UUID():
     return str(uuid4()).replace('-', '').lower()
 
 @outputSchema("type:chararray")
-def getType(file):
+def getDatatype(file):
     splits = file.split('.')
     if file.startswith('data') or file.startswith('mc'):
         if len(splits) < 5:
