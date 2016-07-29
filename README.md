@@ -5,6 +5,7 @@ Reports based on Rucio traces:
 * The volume of datasets as s function of number of times accessed in periods of 3, 6, 9, 12 months and infinity
 * List of never used datasets
 * Detailed statistics on unused data by project and datatype
+
 xAOD reports:
 
 * Analysed events of AODs/DAODs on the grid and locally over time
@@ -20,7 +21,7 @@ Usage:
 
 xAOD reports:
 
-* _/.process\_xaod.sh <start month> <end month>_
+* _/.process\_xaod.sh \<start month\> \<end month\>_
 
 The format for the months is YYYY-MM
 
