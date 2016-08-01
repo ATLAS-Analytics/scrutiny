@@ -49,7 +49,10 @@ elif argv[2] == 'bytes':
     i = 1
 else:
     i = 2
-    
+
+header = "WEEK\tAOD grid\tAOD local\tDAOD grid\tDAOD local"
+print(header)
+
 for week, acc_types in sorted(aggs.items()):
     outline = '\t'.join((str(week), str(acc_types['grid']['AOD'][i]), str(acc_types['local']['AOD'][i]), str(acc_types['grid']['DAOD'][i]), str(acc_types['local']['DAOD'][i])))
     print(outline)
