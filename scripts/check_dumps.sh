@@ -15,7 +15,7 @@ today=$(date -I -d "today")
 for d in "${dumps[@]}"; do
     while true; do
         hour=$(date +%k)
-        if [ $hour -gt 9 ]; then
+        if [ $hour -gt 18 ]; then
             echo "too late"
             exit 1
         fi
@@ -23,8 +23,8 @@ for d in "${dumps[@]}"; do
         echo "check $HDFS_RUCIO_DUMPS_DIR/${today}/${d}/_SUCCESS"
         hadoop fs -ls "$HDFS_RUCIO_DUMPS_DIR/${today}/${d}/_SUCCESS" > /dev/null 2>&1
         if [ $? -ne 0 ]; then
-            echo "could not find ${d}, let's sleep for 30 minutes and see again"
-            sleep 10
+            echo "could not find ${d}, let's sleep for 10 minutes and see again"
+            sleep 600
         else
             echo "found ${d}, continue with the next dump"
             break
