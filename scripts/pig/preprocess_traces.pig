@@ -68,7 +68,7 @@ D = FOREACH D2 GENERATE D1::scope as scope, D1::name as name, traces_valid::even
 
 -- Filtering traces by access operation and storage type
 DESCRIBE D;
-E = FILTER D BY ((scope MATCHES 'data.*') OR (scope MATCHES 'mc.*') OR (scope MATCHES 'valid.*')) AND (eventtype MATCHES 'get.*' OR eventtype == 'download');
+E = FILTER D BY ((scope MATCHES 'data.*') OR (scope MATCHES 'mc.*') OR (scope MATCHES 'valid.*')) AND (eventtype MATCHES 'get.*' OR eventtype MATCHES 'sm_get.*'  OR eventtype == 'download');
 
 F = GROUP E BY (scope, name, uuid);
 
