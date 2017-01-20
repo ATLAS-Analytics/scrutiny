@@ -8,7 +8,7 @@ cd $LOGS # Some logs are being written to the current directory
 hadoop fs -mkdir -p "${HDFS_TRACES_DIR}" >/dev/null 2>&1
 hadoop fs -rm -r "${HDFS_TRACES_DIR}/${YEAR}_fresh" >/dev/null 2>&1
 
-LOG=`pig -F -f $PIG_DIR/preprocess_traces.pig -p DATE=$DATE -p OUT_FILE="${HDFS_TRACES_DIR}/${YEAR}_fresh" -l "$LOGS" 2>&1`
+LOG=`pig -F -f $PIG_DIR/preprocess_traces.pig -p YEAR=$YEAR -p DATE=$DATE -p OUT_FILE="${HDFS_TRACES_DIR}/${YEAR}_fresh" -l "$LOGS" 2>&1`
 CODE=$?
 
 if [ $CODE -eq 0 ]; then

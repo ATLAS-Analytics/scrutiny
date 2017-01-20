@@ -43,6 +43,23 @@ traces2 = LOAD 'scrutiny/traces-preprocess/*/*' USING PigStorage('\t') AS (
   timeentryunix: double
 );
 
+xaod_traces = LOAD '/user/rucio01/tmp/xaod_traces_datasets_201*' USING PigStorage('\t') AS (
+ timeentry: long,
+ uuid: chararray,
+ path: chararray,
+ filename: chararray,
+ scope: chararray,
+ name: chararray,
+ rate: int
+);
+
+
+reduce_fields_xaod = FOREACH xaod_traces GENERATE scope, name, uuid, timeentry;
+
+group_xaod = GROUP reduce_fields_xaod BY (scope, name);
+
+xaod_get_ops = FOREACH group_xaod GENERATE group.scope as scope, group.name as name, COUNT(reduce_fields_xaod) as op_events;
+
 traces = UNION traces1, traces2;
 
 -- Drop unused columns
@@ -83,11 +100,17 @@ get_size_primary_datadisk = FOREACH group_primary_datadisk GENERATE group.scope 
 filter_traces_time = FILTER traces BY timeentryunix IS NOT NULL;
 
 group_traces = GROUP filter_traces_time BY (scope, name);
-count_events = FOREACH group_traces GENERATE group.scope, group.name, COUNT(filter_traces_time.uuid) as op_events;
+count_events = FOREACH group_traces GENERATE group.scope as scope, group.name as name, COUNT(filter_traces_time.uuid) as op_events;
 
-join_traces_primaries = JOIN get_size_primary_datadisk BY (scope, name) LEFT OUTER, count_events BY (scope, name);
+all_traces = UNION count_events, xaod_get_ops;
 
-get_event_count = FOREACH join_traces_primaries GENERATE get_size_primary_datadisk::scope, get_size_primary_datadisk::created_at AS created_at, get_size_primary_datadisk::name as name, get_size_primary_datadisk::rse as rse, get_size_primary_datadisk::bytes AS bytes, ((count_events::op_events IS NULL) ? 0 : count_events::op_events) AS op_events;
+group_all_traces = GROUP all_traces BY (scope, name);
+
+get_events = FOREACH group_all_traces GENERATE group.scope as scope, group.name as name, SUM(all_traces.op_events) as op_events;
+
+join_traces_primaries = JOIN get_size_primary_datadisk BY (scope, name) LEFT OUTER, get_events BY (scope, name);
+
+get_event_count = FOREACH join_traces_primaries GENERATE get_size_primary_datadisk::scope, get_size_primary_datadisk::created_at AS created_at, get_size_primary_datadisk::name as name, get_size_primary_datadisk::rse as rse, get_size_primary_datadisk::bytes AS bytes, ((get_events::op_events IS NULL) ? 0 : get_events::op_events) AS op_events;
 
 group_scope_name = GROUP get_event_count BY (scope, name);
 
@@ -97,4 +120,3 @@ filter_zero_ = FILTER get_dataset_volume BY op_events == 0;
 filter_zero = FOREACH filter_zero_ GENERATE scope, name, bytes, (int)created_at, (int)(($TIME_UTC - created_at)/86400) as age_days;
 filter_zero_sorted = ORDER filter_zero BY scope, name;
 STORE filter_zero_sorted INTO '$OUT_FILE' USING PigStorage('\t');
-
