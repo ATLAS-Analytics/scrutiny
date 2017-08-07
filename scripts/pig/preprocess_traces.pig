@@ -34,7 +34,7 @@ rucio_traces15 = LOAD '/user/rucio01/traces/traces.2015-{08,09,10,11,12}-*[0-9]'
 );
 */
 
-rucio_traces16 = LOAD '/user/rucio01/traces/traces.2016-*[0-9]' USING rucioudfs.TracesLoader() as (
+rucio_traces = LOAD '/user/rucio01/traces/traces.$YEAR-*' USING rucioudfs.TracesLoader() as (
   timeentry: double,
   timeStart: double,
   timeEnd: double,
@@ -50,9 +50,6 @@ rucio_traces16 = LOAD '/user/rucio01/traces/traces.2016-*[0-9]' USING rucioudfs.
   uuid:chararray,
   usrdn:chararray
 );
-
--- rucio_traces = UNION rucio_traces15, rucio_traces16;
-rucio_traces = rucio_traces16;
 
 traces = FOREACH rucio_traces GENERATE dataset, timeentry as timeentryunix, eventType as eventtype, usrdn, remoteSite as remotesite, localSite as localsite, uuid, filename;
 
