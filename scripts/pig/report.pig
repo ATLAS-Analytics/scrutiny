@@ -21,6 +21,9 @@ dids = LOAD '/user/rucio01/dumps/$DATE/dids' USING AvroStorage();
 -- Rucio storage elements
 rses = LOAD '/user/rucio01/dumps/$DATE/rses' USING AvroStorage();
 
+-- Dataset replicas (with incomplete)
+collection_replicas = LOAD '/user/rucio01/dumps/$DATE/collection_replicas' USING AvroStorage();
+
 -- Preprocessed traces up to Aug 2016
 traces1 = LOAD '/user/rucio01/tmp/processed_traces_30_07_2015/*' USING PigStorage('\t') AS (
   scope: chararray,
@@ -39,7 +42,16 @@ traces2 = LOAD 'scrutiny/traces-preprocess/*/*' USING PigStorage('\t') AS (
   timeentryunix: double
 );
 
-traces = UNION traces1, traces2;
+-- Rest of the traces
+traces3 = LOAD '/user/rucio01/tmp/preprocessed_traces/*/*' USING PigStorage('\t') AS (
+  scope: chararray,
+  name: chararray,
+  uuid: chararray,
+  fileops: long,
+  timeentryunix: double
+);
+
+traces = UNION traces1, traces2, traces3;
 
 
 -- Drop unused columns
@@ -56,13 +68,19 @@ reduce_fields_dslocks = FOREACH dslocks GENERATE SCOPE as scope, NAME as name, R
 
 join_dslocks_rses = JOIN reduce_fields_dslocks BY rse_id, reduce_fields_rses BY id USING 'REPLICATED';
 
-get_replicas = FOREACH join_dslocks_rses GENERATE reduce_fields_dslocks::scope as scope, reduce_fields_dslocks::name as name, reduce_fields_rses::rse as rse, (long)reduce_fields_dslocks::bytes as bytes;
+get_dslocks = FOREACH join_dslocks_rses GENERATE reduce_fields_dslocks::scope as scope, reduce_fields_dslocks::name as name, reduce_fields_rses::rse as rse, (long)reduce_fields_dslocks::bytes as bytes, reduce_fields_dslocks::rse_id as rse_id;
 
-get_datadisk_replicas = FILTER get_replicas BY (rse MATCHES '.*DATADISK');
+get_datadisk_locks = FILTER get_dslocks BY (rse MATCHES '.*DATADISK');
 
-join_dids_replicas = JOIN reduce_fields_dids_2 BY (scope, name), get_datadisk_replicas BY (scope, name);
+reduce_fields_coll_reps = FOREACH collection_replicas GENERATE SCOPE as scope, NAME as name, RSE_ID as rse_id, (long)AVAILABLE_BYTES as bytes;
 
-get_primary_datadisk = FOREACH join_dids_replicas GENERATE get_datadisk_replicas::scope as scope, get_datadisk_replicas::name as name, get_datadisk_replicas::bytes as bytes, get_datadisk_replicas::rse as rse, reduce_fields_dids_2::created_at AS created_at;
+join_dslocks_coll_reps = JOIN get_datadisk_locks BY (scope, name, rse_id), reduce_fields_coll_reps BY (scope, name, rse_id);
+
+get_replicas = FOREACH join_dslocks_coll_reps GENERATE get_datadisk_locks::scope as scope, get_datadisk_locks::name as name, get_datadisk_locks::rse as rse, reduce_fields_coll_reps::bytes as bytes;
+
+join_dids_replicas = JOIN reduce_fields_dids_2 BY (scope, name), get_replicas BY (scope, name);
+
+get_primary_datadisk = FOREACH join_dids_replicas GENERATE get_replicas::scope as scope, get_replicas::name as name, get_replicas::bytes as bytes, get_replicas::rse as rse, reduce_fields_dids_2::created_at AS created_at;
 
 group_primary_datadisk = GROUP get_primary_datadisk BY (scope, name, rse);
 
